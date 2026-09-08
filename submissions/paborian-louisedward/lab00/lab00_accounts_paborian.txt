@@ -1,0 +1,3 @@
+lpaborian-stack
+ChatGPT, Gemini
+https://github.com/lpaborian-stack/numerical-methods-lab

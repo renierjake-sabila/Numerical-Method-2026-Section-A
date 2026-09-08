@@ -1,5 +1,12 @@
-print("python is working")
+PS C:\Users\Lenovo\Downloads\python practice> & "C:\Program Files\Python314\python.exe" "c:/Users/Lenovo/Downloads/python practice/miranda_submissions/Lab00_check_miranda.py"
+Python     : 3.14.7
+NumPy      : 2.5.2
+SciPy      : 1.18.0
+Matplotlib : 3.11.1
 
-PS C:\Users\Lenovo\Downloads\python practice> python -u "c:\Users\Lenovo\Downloads\python practice\hello.py"
-python is working
+mean of sin(x) over one period : 0.0
+integral of sin(x) from 0 to pi : 2.0 (exact value 2)
+
+figure written to figures/lab00_check.png
+PLATFORM READY.
 PS C:\Users\Lenovo\Downloads\python practice> 

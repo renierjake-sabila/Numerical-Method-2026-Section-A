@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 02: Reservoir Stage Kinematics & Logistic Modeling</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #ffffff;
+            color: #0f172a;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .rainbow-gradient-text {
+            background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #10b981, #06b6d4, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .rainbow-bar {
+            height: 4px;
+            background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #10b981, #06b6d4, #6366f1, #a855f7);
+        }
+        .tab-btn.active {
+            border-bottom-color: #8b5cf6;
+            color: #7c3aed;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-12">
+
+    <!-- Rainbow Top Bar Accent -->
+    <div class="rainbow-bar"></div>
+
+    <!-- Top Executive Header Block -->
+    <header class="bg-white border-b border-slate-200 py-6 px-8 mb-8 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <span class="inline-block px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white bg-gradient-to-r from-red-500 via-amber-500 via-emerald-500 via-cyan-500 to-purple-500 rounded-full mb-2">
+                    Executive Engineering Dashboard
+                </span>
+                <h1 class="text-3xl font-extrabold rainbow-gradient-text">Lab 02: Reservoir Stage Kinematics</h1>
+                <p class="text-sm text-slate-500 mt-1">
+                    Student: <span class="font-semibold text-slate-700">Miranda</span> &nbsp;|&nbsp; 
+                    Dataset: <span class="font-semibold text-slate-700">Data-01.xlsx</span> &nbsp;|&nbsp; 
+                    Model: <span class="font-semibold text-slate-700">4-Parameter Logistic Fit</span>
+                </p>
+            </div>
+            <div class="text-right">
+                <span class="text-xs text-slate-400 block">Theme</span>
+                <span class="text-sm font-bold bg-gradient-to-r from-pink-500 to-violet-600 text-white px-3 py-1 rounded-full shadow-xs">Spectral Rainbow</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6">
+
+        <!-- 4-Column Highlight KPIs Box (Rainbow Palette) -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <!-- Card 1: Red Accent -->
+            <div class="bg-white border-l-4 border-red-500 rounded-xl p-5 shadow-sm border-t border-r border-b border-slate-200">
+                <span class="text-xs font-semibold text-red-500 uppercase tracking-wide">Total Duration</span>
+                <div class="text-2xl font-black text-slate-900 mt-1">71.75 <span class="text-base font-normal text-slate-500">hrs</span></div>
+                <p class="text-xs text-slate-400 mt-1">Start: 0.00h | End: 71.75h</p>
+            </div>
+
+            <!-- Card 2: Orange Accent -->
+            <div class="bg-white border-l-4 border-amber-500 rounded-xl p-5 shadow-sm border-t border-r border-b border-slate-200">
+                <span class="text-xs font-semibold text-amber-500 uppercase tracking-wide">Max Inflow Rate (dh/dt)</span>
+                <div class="text-2xl font-black text-amber-600 mt-1">0.9600 <span class="text-base font-normal text-slate-500">m/hr</span></div>
+                <p class="text-xs text-slate-400 mt-1">Peak at hour <span class="font-medium text-slate-700">29.25 h</span></p>
+            </div>
+
+            <!-- Card 3: Emerald Accent -->
+            <div class="bg-white border-l-4 border-emerald-500 rounded-xl p-5 shadow-sm border-t border-r border-b border-slate-200">
+                <span class="text-xs font-semibold text-emerald-500 uppercase tracking-wide">Goodness of Fit (R²)</span>
+                <div class="text-2xl font-black text-emerald-600 mt-1">0.979149</div>
+                <p class="text-xs text-slate-400 mt-1">Std Error (s): 0.3864 m</p>
+            </div>
+
+            <!-- Card 4: Violet Accent -->
+            <div class="bg-white border-l-4 border-violet-500 rounded-xl p-5 shadow-sm border-t border-r border-b border-slate-200">
+                <span class="text-xs font-semibold text-violet-500 uppercase tracking-wide">Cumulative Integration</span>
+                <div class="text-2xl font-black text-violet-600 mt-1">1260.924 <span class="text-base font-normal text-slate-500">m·hr</span></div>
+                <p class="text-xs text-slate-400 mt-1">scipy.quad (Diff: 0.0000%)</p>
+            </div>
+        </section>
+
+        <!-- Interactive Tab Navigation Bar -->
+        <div class="border-b border-slate-200 mb-6 bg-white rounded-t-xl px-4 pt-2 shadow-xs">
+            <nav class="flex gap-8" id="tabNav">
+                <button onclick="switchTab('tab1')" id="btn-tab1" class="tab-btn active pb-3 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-purple-600 transition-colors">
+                    Tab 1: Numerical Derivatives & Kinematics
+                </button>
+                <button onclick="switchTab('tab2')" id="btn-tab2" class="tab-btn pb-3 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-purple-600 transition-colors">
+                    Tab 2: Logistic Model & Curve Fitting
+                </button>
+                <button onclick="switchTab('tab3')" id="btn-tab3" class="tab-btn pb-3 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-purple-600 transition-colors">
+                    Tab 3: Statistical Diagnostics & Volumetric Integration
+                </button>
+            </nav>
+        </div>
+
+        <!-- ================= TAB 1 CONTENT ================= -->
+        <div id="tab1" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left 2 Cols: Rainbow Charts -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-t-4 border-t-red-500">
+                        <h2 class="text-md font-bold text-slate-800 mb-1">First Derivative: Velocity (dh/dt)</h2>
+                        <p class="text-xs text-slate-500 mb-4">Finite-difference velocity curve in bright spectral red/orange.</p>
+                        <div class="h-64">
+                            <canvas id="chart1stDeriv"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-t-4 border-t-amber-500">
+                        <h2 class="text-md font-bold text-slate-800 mb-1">Second Derivative: Acceleration (d²h/dt²)</h2>
+                        <p class="text-xs text-slate-500 mb-4">Acceleration transition curve in vivid warm amber/yellow.</p>
+                        <div class="h-64">
+                            <canvas id="chart2ndDeriv"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Col: Engineering Notes & Summary -->
+                <div class="space-y-6">
+                    <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-t-4 border-t-emerald-500">
+                        <h3 class="text-md font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">Kinematic Insights</h3>
+                        <div class="space-y-4 text-sm text-slate-600">
+                            <div>
+                                <span class="text-xs font-bold uppercase text-red-500 block">Peak Inflow Peak</span>
+                                <p class="text-slate-800 font-medium mt-1">Rate: <span class="text-red-600 font-bold text-lg">0.9600 m/hr</span></p>
+                                <p class="text-slate-800 font-medium">Timestamp: <span class="text-slate-900 font-bold">29.25 hours</span></p>
+                            </div>
+                            <hr class="border-slate-200">
+                            <div>
+                                <span class="text-xs font-bold uppercase text-emerald-500 block">Engineering Context</span>
+                                <p class="mt-1 leading-relaxed text-xs text-slate-600">
+                                    The first derivative captures the instantaneous rate of stage change (inflow velocity). The second derivative indicates acceleration, marking where inflow velocity transitions from increasing to decreasing.
+                                </p>
+                            </div>
+                            <div class="bg-gradient-to-r from-red-50 via-amber-50 to-emerald-50 border border-amber-200 p-3 text-xs text-slate-800 rounded-lg">
+                                <strong>Inflection Point:</strong> Peak inflow velocity corresponds directly to zero-crossing in the acceleration curve ($d^2h/dt^2 = 0$).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2 CONTENT ================= -->
+        <div id="tab2" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left 2 Cols: Main Fitting Chart -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-t-4 border-t-cyan-500">
+                        <div class="flex justify-between items-center mb-2">
+                            <div>
+                                <h2 class="text-md font-bold text-slate-800">Logistic Model vs. Measured Stage</h2>
+                                <p class="text-xs text-slate-500">Nonlinear regression overlay (Measured points in Violet, Fitted line in Cyan).</p>
+                            </div>
+                            <span class="text-xs font-mono bg-purple-100 text-purple-700 font-bold px-3 py-1 rounded-full">R² = 0.979149</span>
+                        </div>
+                        <div class="h-[460px]">
+                            <canvas id="chartLogisticFit"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Col: Parameter Table -->
+                <div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-t-4 border-t-violet-500">
+                        <h3 class="text-md font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">Fitted Parameters</h3>
+                        <p class="text-xs text-slate-500 mb-4">Form: $h(t) = c + rac{a}{1 + e^{-k(t - t_0)}}$</p>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-600">
+                                <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-2">Parameter</th>
+                                        <th class="p-2">Estimate</th>
+                                        <th class="p-2">Std Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="p-2 font-medium text-slate-800">
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold mr-1 bg-red-100 text-red-700">Scale</span>
+                                        </td>
+                                        <td class="p-2 font-mono text-purple-700 font-bold">5.513894 m</td>
+                                        <td class="p-2 font-mono text-slate-500">±0.049942</td>
+                                    </tr>
+                                    
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="p-2 font-medium text-slate-800">
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold mr-1 bg-amber-100 text-amber-700">Growth</span>
+                                        </td>
+                                        <td class="p-2 font-mono text-purple-700 font-bold">0.855571 hr⁻¹</td>
+                                        <td class="p-2 font-mono text-slate-500">±0.062457</td>
+                                    </tr>
+                                    
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="p-2 font-medium text-slate-800">
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold mr-1 bg-emerald-100 text-emerald-700">Inflection</span>
+                                        </td>
+                                        <td class="p-2 font-mono text-purple-700 font-bold">30.157709 hr</td>
+                                        <td class="p-2 font-mono text-slate-500">±0.097845</td>
+                                    </tr>
+                                    
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="p-2 font-medium text-slate-800">
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold mr-1 bg-violet-100 text-violet-700">Baseline</span>
+                                        </td>
+                                        <td class="p-2 font-mono text-purple-700 font-bold">14.377539 m</td>
+                                        <td class="p-2 font-mono text-slate-500">±0.037905</td>
+                                    </tr>
+                                    
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-4 p-3 bg-gradient-to-br from-violet-50 to-pink-50 border border-purple-100 rounded-lg text-xs text-purple-900">
+                            <strong>Physical Parameters:</strong>
+                            <ul class="list-disc list-inside mt-1 space-y-1 text-slate-700">
+                                <li><strong class="text-red-600">a:</strong> Total stage capacity (5.514 m)</li>
+                                <li><strong class="text-amber-600">k:</strong> Growth steepness (0.856 hr⁻¹)</li>
+                                <li><strong class="text-emerald-600">t₀:</strong> Midpoint hour (30.158 hr)</li>
+                                <li><strong class="text-violet-600">c:</strong> Baseline stage elevation (14.378 m)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3 CONTENT ================= -->
+        <div id="tab3" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Left Card: Full Statistical Parameter Diagnostics -->
+                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-t-4 border-t-indigo-500">
+                    <h3 class="text-md font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">Statistical Significance & Diagnostics</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-2">Parameter</th>
+                                    <th class="p-2">t-Statistic</th>
+                                    <th class="p-2">p-Value</th>
+                                    <th class="p-2">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-2 font-medium text-slate-800">Scale Parameter (a)</td>
+                                    <td class="p-2 font-mono">110.4058</td>
+                                    <td class="p-2 font-mono">< 0.0001</td>
+                                    <td class="p-2">
+                                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700">
+                                            Significant
+                                        </span>
+                                    </td>
+                                </tr>
+                                
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-2 font-medium text-slate-800">Growth Rate (k)</td>
+                                    <td class="p-2 font-mono">13.6987</td>
+                                    <td class="p-2 font-mono">< 0.0001</td>
+                                    <td class="p-2">
+                                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700">
+                                            Significant
+                                        </span>
+                                    </td>
+                                </tr>
+                                
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-2 font-medium text-slate-800">Inflection Point (t₀)</td>
+                                    <td class="p-2 font-mono">308.2197</td>
+                                    <td class="p-2 font-mono">< 0.0001</td>
+                                    <td class="p-2">
+                                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700">
+                                            Significant
+                                        </span>
+                                    </td>
+                                </tr>
+                                
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-2 font-medium text-slate-800">Baseline Offset (c)</td>
+                                    <td class="p-2 font-mono">379.3039</td>
+                                    <td class="p-2 font-mono">< 0.0001</td>
+                                    <td class="p-2">
+                                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700">
+                                            Significant
+                                        </span>
+                                    </td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-6 space-y-2 text-xs text-slate-600">
+                        <div class="flex justify-between py-1 border-b border-slate-200">
+                            <span>Sum of Squared Errors (SSE):</span>
+                            <span class="font-mono font-bold text-red-600">42.412537</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-slate-200">
+                            <span>Total Sum of Squares (SST):</span>
+                            <span class="font-mono font-bold text-amber-600">2034.077941</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-slate-200">
+                            <span>Standard Error of Estimate (s):</span>
+                            <span class="font-mono font-bold text-emerald-600">0.386445 m</span>
+                        </div>
+                        <div class="flex justify-between py-1">
+                            <span>Degrees of Freedom (dof):</span>
+                            <span class="font-mono font-bold text-purple-600">284</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Card: Volumetric Integration & Cross-Check -->
+                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm border-t-4 border-t-pink-500">
+                    <h3 class="text-md font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">Volumetric Integration Comparison</h3>
+                    <p class="text-xs text-slate-500 mb-4">Evaluation of stage-time area integral $\int_{t_0}^{t_f} h(t) dt$.</p>
+                    
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-lg flex justify-between items-center">
+                            <div>
+                                <span class="text-xs text-violet-700 font-bold block uppercase">scipy.integrate.quad</span>
+                                <span class="text-xl font-black text-violet-700">1260.923879 <span class="text-xs text-slate-500 font-normal">m·hr</span></span>
+                            </div>
+                            <span class="text-xs bg-violet-600 text-white font-bold px-2.5 py-1 rounded-full shadow-xs">Adaptive Quad</span>
+                        </div>
+
+                        <div class="p-4 bg-gradient-to-r from-cyan-50 to-teal-50 border border-cyan-200 rounded-lg flex justify-between items-center">
+                            <div>
+                                <span class="text-xs text-cyan-700 font-bold block uppercase">np.trapezoid</span>
+                                <span class="text-xl font-black text-teal-700">1260.923879 <span class="text-xs text-slate-500 font-normal">m·hr</span></span>
+                            </div>
+                            <span class="text-xs bg-teal-600 text-white font-bold px-2.5 py-1 rounded-full shadow-xs">Trapezoidal</span>
+                        </div>
+
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                            <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                                <span>Absolute Difference:</span>
+                                <span class="font-mono text-purple-600 font-bold">2.273737e-13 m·hr</span>
+                            </div>
+                            <div class="flex justify-between text-xs font-semibold text-slate-700">
+                                <span>Relative Error:</span>
+                                <span class="font-mono text-emerald-600 font-bold">0.000000%</span>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 border border-slate-200 rounded-lg">
+                            <strong>Integration Verdict:</strong> Excellent spectral cross-validation (0.0000% error) verifies total volumetric consistency across both discrete trapezoidal and adaptive continuous quadrature algorithms.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Embedded Data & Chart Script (Rainbow Colors) -->
+    <script>
+        // Data arrays exported cleanly from Python
+        const tData = [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0, 5.25, 5.5, 5.75, 6.0, 6.25, 6.5, 6.75, 7.0, 7.25, 7.5, 7.75, 8.0, 8.25, 8.5, 8.75, 9.0, 9.25, 9.5, 9.75, 10.0, 10.25, 10.5, 10.75, 11.0, 11.25, 11.5, 11.75, 12.0, 12.25, 12.5, 12.75, 13.0, 13.25, 13.5, 13.75, 14.0, 14.25, 14.5, 14.75, 15.0, 15.25, 15.5, 15.75, 16.0, 16.25, 16.5, 16.75, 17.0, 17.25, 17.5, 17.75, 18.0, 18.25, 18.5, 18.75, 19.0, 19.25, 19.5, 19.75, 20.0, 20.25, 20.5, 20.75, 21.0, 21.25, 21.5, 21.75, 22.0, 22.25, 22.5, 22.75, 23.0, 23.25, 23.5, 23.75, 24.0, 24.25, 24.5, 24.75, 25.0, 25.25, 25.5, 25.75, 26.0, 26.25, 26.5, 26.75, 27.0, 27.25, 27.5, 27.75, 28.0, 28.25, 28.5, 28.75, 29.0, 29.25, 29.5, 29.75, 30.0, 30.25, 30.5, 30.75, 31.0, 31.25, 31.5, 31.75, 32.0, 32.25, 32.5, 32.75, 33.0, 33.25, 33.5, 33.75, 34.0, 34.25, 34.5, 34.75, 35.0, 35.25, 35.5, 35.75, 36.0, 36.25, 36.5, 36.75, 37.0, 37.25, 37.5, 37.75, 38.0, 38.25, 38.5, 38.75, 39.0, 39.25, 39.5, 39.75, 40.0, 40.25, 40.5, 40.75, 41.0, 41.25, 41.5, 41.75, 42.0, 42.25, 42.5, 42.75, 43.0, 43.25, 43.5, 43.75, 44.0, 44.25, 44.5, 44.75, 45.0, 45.25, 45.5, 45.75, 46.0, 46.25, 46.5, 46.75, 47.0, 47.25, 47.5, 47.75, 48.0, 48.25, 48.5, 48.75, 49.0, 49.25, 49.5, 49.75, 50.0, 50.25, 50.5, 50.75, 51.0, 51.25, 51.5, 51.75, 52.0, 52.25, 52.5, 52.75, 53.0, 53.25, 53.5, 53.75, 54.0, 54.25, 54.5, 54.75, 55.0, 55.25, 55.5, 55.75, 56.0, 56.25, 56.5, 56.75, 57.0, 57.25, 57.5, 57.75, 58.0, 58.25, 58.5, 58.75, 59.0, 59.25, 59.5, 59.75, 60.0, 60.25, 60.5, 60.75, 61.0, 61.25, 61.5, 61.75, 62.0, 62.25, 62.5, 62.75, 63.0, 63.25, 63.5, 63.75, 64.0, 64.25, 64.5, 64.75, 65.0, 65.25, 65.5, 65.75, 66.0, 66.25, 66.5, 66.75, 67.0, 67.25, 67.5, 67.75, 68.0, 68.25, 68.5, 68.75, 69.0, 69.25, 69.5, 69.75, 70.0, 70.25, 70.5, 70.75, 71.0, 71.25, 71.5, 71.75];
+        const hData = [14.18, 14.21, 14.22, 14.21, 14.21, 14.2, 14.24, 14.25, 14.25, 14.23, 14.23, 14.23, 14.25, 14.24, 14.25, 14.24, 14.25, 14.24, 14.24, 14.26, 14.27, 14.3, 14.29, 14.29, 14.26, 14.28, 14.3, 14.3, 14.31, 14.32, 14.32, 14.31, 14.31, 14.29, 14.3, 14.32, 14.33, 14.33, 14.32, 14.3, 14.32, 14.34, 14.33, 14.31, 14.33, 14.34, 14.34, 14.35, 14.34, 14.38, 14.38, 14.39, 14.39, 14.39, 14.37, 14.38, 14.39, 14.39, 14.39, 14.41, 14.43, 14.41, 14.4, 14.43, 14.42, 14.44, 14.43, 14.42, 14.43, 14.45, 14.45, 14.44, 14.42, 14.43, 14.46, 14.48, 14.47, 14.46, 14.48, 14.46, 14.48, 14.48, 14.49, 14.47, 14.47, 14.47, 14.49, 14.48, 14.48, 14.48, 14.5, 14.51, 14.49, 14.5, 14.49, 14.5, 14.51, 14.51, 14.53, 14.54, 14.54, 14.58, 14.57, 14.59, 14.61, 14.64, 14.7, 14.74, 14.82, 14.9, 14.99, 15.11, 15.23, 15.4, 15.6, 15.8, 16.02, 16.25, 16.5, 16.73, 16.96, 17.21, 17.42, 17.63, 17.84, 18.01, 18.21, 18.39, 18.6, 18.79, 19.0, 19.21, 19.4, 19.64, 19.86, 20.08, 20.29, 20.46, 20.62, 20.78, 20.91, 21.01, 21.06, 21.1, 21.13, 21.14, 21.12, 21.09, 21.08, 21.05, 21.0, 20.96, 20.92, 20.88, 20.84, 20.81, 20.76, 20.72, 20.69, 20.65, 20.6, 20.57, 20.52, 20.46, 20.43, 20.4, 20.35, 20.31, 20.3, 20.26, 20.25, 20.21, 20.17, 20.15, 20.12, 20.09, 20.05, 20.04, 20.0, 19.97, 19.95, 19.96, 19.94, 19.91, 19.89, 19.9, 19.85, 19.85, 19.83, 19.82, 19.8, 19.8, 19.78, 19.76, 19.75, 19.73, 19.74, 19.73, 19.72, 19.71, 19.7, 19.72, 19.7, 19.68, 19.68, 19.66, 19.67, 19.65, 19.65, 19.64, 19.62, 19.64, 19.63, 19.64, 19.62, 19.61, 19.6, 19.59, 19.59, 19.59, 19.59, 19.61, 19.62, 19.6, 19.59, 19.59, 19.58, 19.54, 19.54, 19.57, 19.55, 19.55, 19.55, 19.53, 19.53, 19.56, 19.56, 19.55, 19.53, 19.53, 19.52, 19.52, 19.51, 19.52, 19.52, 19.53, 19.53, 19.51, 19.53, 19.53, 19.53, 19.53, 19.53, 19.54, 19.51, 19.52, 19.51, 19.49, 19.5, 19.49, 19.5, 19.52, 19.54, 19.53, 19.52, 19.54, 19.53, 19.52, 19.5, 19.53, 19.51, 19.5, 19.52, 19.52, 19.51, 19.5, 19.5, 19.52, 19.5, 19.51, 19.52, 19.5, 19.51, 19.5, 19.49, 19.51, 19.52, 19.51];
+        const dhData = [0.12, 0.08, 0.0, -0.02, -0.02, 0.06, 0.1, 0.02, -0.04, -0.04, 0.0, 0.04, 0.02, 0.0, 0.0, 0.0, 0.0, -0.02, 0.04, 0.06, 0.08, 0.04, -0.02, -0.06, -0.02, 0.08, 0.04, 0.02, 0.04, 0.02, -0.02, -0.02, -0.04, -0.02, 0.06, 0.06, 0.02, -0.02, -0.06, 0.0, 0.08, 0.02, -0.06, 0.0, 0.06, 0.02, 0.02, 0.0, 0.06, 0.08, 0.02, 0.02, 0.0, -0.04, -0.02, 0.04, 0.02, 0.0, 0.04, 0.08, 0.0, -0.06, 0.04, 0.04, 0.02, 0.02, -0.04, 0.0, 0.06, 0.04, -0.02, -0.06, -0.02, 0.08, 0.1, 0.02, -0.04, 0.02, 0.0, 0.0, 0.04, 0.02, -0.02, -0.04, 0.0, 0.04, 0.02, -0.02, 0.0, 0.04, 0.06, -0.02, -0.02, 0.0, 0.0, 0.04, 0.02, 0.04, 0.06, 0.02, 0.08, 0.06, 0.02, 0.08, 0.1, 0.18, 0.2, 0.24, 0.32, 0.34, 0.42, 0.48, 0.58, 0.74, 0.8, 0.84, 0.9, 0.96, 0.96, 0.92, 0.96, 0.92, 0.84, 0.84, 0.76, 0.74, 0.76, 0.78, 0.8, 0.8, 0.84, 0.8, 0.86, 0.92, 0.88, 0.86, 0.76, 0.66, 0.64, 0.58, 0.46, 0.3, 0.18, 0.14, 0.08, -0.02, -0.1, -0.08, -0.08, -0.16, -0.18, -0.16, -0.16, -0.16, -0.14, -0.16, -0.18, -0.14, -0.14, -0.18, -0.16, -0.16, -0.22, -0.18, -0.12, -0.16, -0.18, -0.1, -0.1, -0.1, -0.1, -0.16, -0.12, -0.1, -0.12, -0.14, -0.1, -0.1, -0.14, -0.1, -0.02, -0.02, -0.1, -0.1, -0.02, -0.08, -0.1, -0.04, -0.06, -0.06, -0.04, -0.04, -0.08, -0.06, -0.06, -0.02, 0.0, -0.04, -0.04, -0.04, 0.02, 0.0, -0.08, -0.04, -0.04, -0.02, -0.02, -0.04, -0.02, -0.06, 0.0, 0.02, 0.0, -0.02, -0.06, -0.04, -0.04, -0.02, 0.0, 0.0, 0.04, 0.06, -0.02, -0.06, -0.02, -0.02, -0.1, -0.08, 0.06, 0.02, -0.04, 0.0, -0.04, -0.04, 0.06, 0.06, -0.02, -0.06, -0.04, -0.02, -0.02, -0.02, 0.0, 0.02, 0.02, 0.02, -0.04, 0.0, 0.04, 0.0, 0.0, 0.0, 0.02, -0.04, -0.04, 0.0, -0.06, -0.02, 0.0, 0.0, 0.06, 0.08, 0.02, -0.04, 0.02, 0.02, -0.04, -0.06, 0.02, 0.02, -0.06, 0.02, 0.04, -0.02, -0.04, -0.02, 0.04, 0.0, -0.02, 0.04, -0.02, -0.02, 0.0, -0.04, 0.02, 0.06, 0.0, -0.04];
+        const d2hData = [-0.16, -0.24, -0.2, -0.04, 0.16, 0.24, -0.08, -0.28, -0.12, 0.08, 0.16, 0.04, -0.08, -0.04, 0.0, 0.0, -0.04, 0.08, 0.16, 0.08, -0.04, -0.2, -0.2, 0.0, 0.28, 0.12, -0.12, -0.0, 0.0, -0.12, -0.08, -0.04, 0.0, 0.2, 0.16, -0.08, -0.16, -0.16, 0.04, 0.28, 0.04, -0.28, -0.04, 0.24, 0.04, -0.08, -0.04, 0.08, 0.16, -0.08, -0.12, -0.04, -0.12, -0.04, 0.16, 0.08, -0.08, 0.04, 0.16, -0.08, -0.28, 0.08, 0.2, -0.04, -0.04, -0.12, -0.04, 0.2, 0.08, -0.16, -0.2, 0.0, 0.28, 0.24, -0.12, -0.28, 0.0, 0.08, -0.04, 0.08, 0.04, -0.12, -0.12, 0.04, 0.16, 0.04, -0.12, -0.04, 0.12, 0.12, -0.12, -0.16, 0.04, 0.04, 0.08, 0.04, 0.0, 0.08, -0.04, 0.04, 0.08, -0.12, 0.04, 0.16, 0.2, 0.2, 0.12, 0.24, 0.2, 0.2, 0.28, 0.32, 0.52, 0.44, 0.2, 0.2, 0.24, 0.12, -0.08, 0.0, 0.0, -0.24, -0.16, -0.16, -0.2, -0.0, 0.08, 0.08, 0.04, 0.08, 0.0, 0.04, 0.24, 0.04, -0.12, -0.24, -0.4, -0.24, -0.16, -0.36, -0.56, -0.56, -0.32, -0.2, -0.32, -0.36, -0.12, 0.04, -0.16, -0.2, 0.0, 0.04, -0.0, 0.04, 0.0, -0.08, 0.04, 0.08, -0.08, -0.04, 0.04, -0.12, -0.04, 0.2, 0.04, -0.12, 0.12, 0.16, 0.0, -0.0, -0.12, -0.04, 0.12, 0.0, -0.08, 0.04, 0.08, -0.08, 0.0, 0.24, 0.16, -0.16, -0.16, 0.16, 0.04, -0.16, 0.08, 0.08, -0.04, 0.04, 0.04, -0.08, -0.04, 0.04, 0.08, 0.12, -0.04, -0.08, 0.0, 0.12, 0.08, -0.2, -0.08, 0.08, 0.04, 0.04, -0.04, 0.0, -0.04, 0.04, 0.16, 0.0, -0.08, -0.12, -0.04, 0.04, 0.04, 0.08, 0.04, 0.08, 0.12, -0.12, -0.24, -0.0, 0.08, -0.16, -0.12, 0.32, 0.2, -0.2, -0.04, 0.0, -0.08, 0.2, 0.2, -0.16, -0.24, -0.04, 0.08, 0.04, 0.0, 0.04, 0.08, 0.04, 0.0, -0.12, -0.04, 0.16, 0.0, -0.08, 0.0, 0.04, -0.08, -0.12, 0.08, -0.04, -0.04, 0.12, 0.04, 0.12, 0.16, -0.08, -0.24, -0.0, 0.12, -0.12, -0.16, 0.12, 0.16, -0.16, -0.0, 0.2, -0.08, -0.16, -0.0, 0.16, 0.04, -0.12, 0.08, -0.0, -0.12, 0.04, -0.04, 0.04, 0.2, -0.04, -0.2, -0.16];
+        const hPredData = [14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.37754, 14.37754, 14.37754, 14.37754, 14.377541, 14.377541, 14.377542, 14.377542, 14.377543, 14.377544, 14.377546, 14.377547, 14.377549, 14.377552, 14.377555, 14.377558, 14.377563, 14.377569, 14.377576, 14.377585, 14.377596, 14.37761, 14.377627, 14.377648, 14.377674, 14.377706, 14.377746, 14.377796, 14.377857, 14.377933, 14.378027, 14.378143, 14.378287, 14.378466, 14.378687, 14.378961, 14.3793, 14.379719, 14.380239, 14.380883, 14.38168, 14.382666, 14.383888, 14.3854, 14.387271, 14.389587, 14.392453, 14.395997, 14.400381, 14.405801, 14.412499, 14.420771, 14.430981, 14.443574, 14.45909, 14.478184, 14.501647, 14.530425, 14.565643, 14.608623, 14.660902, 14.724233, 14.800572, 14.892047, 15.00088, 15.129273, 15.279236, 15.452363, 15.649563, 15.870772, 16.114697, 16.378636, 16.658458, 16.948768, 17.243275, 17.535316, 17.818448, 18.086998, 18.33648, 18.563814, 18.767348, 18.946721, 19.102614, 19.23647, 19.350213, 19.446014, 19.526103, 19.592641, 19.647633, 19.69289, 19.730003, 19.76035, 19.785105, 19.80526, 19.821644, 19.834945, 19.845732, 19.854474, 19.861552, 19.867281, 19.871915, 19.875663, 19.878692, 19.881141, 19.88312, 19.884719, 19.88601, 19.887054, 19.887896, 19.888577, 19.889127, 19.88957, 19.889929, 19.890218, 19.890452, 19.890641, 19.890793, 19.890916, 19.891016, 19.891096, 19.891161, 19.891213, 19.891255, 19.89129, 19.891317, 19.891339, 19.891357, 19.891372, 19.891383, 19.891393, 19.891401, 19.891407, 19.891412, 19.891416, 19.891419, 19.891422, 19.891424, 19.891425, 19.891427, 19.891428, 19.891429, 19.89143, 19.89143, 19.891431, 19.891431, 19.891431, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433];
+        const tDense = [0.0, 0.360553, 0.721106, 1.081658, 1.442211, 1.802764, 2.163317, 2.523869, 2.884422, 3.244975, 3.605528, 3.96608, 4.326633, 4.687186, 5.047739, 5.408291, 5.768844, 6.129397, 6.48995, 6.850503, 7.211055, 7.571608, 7.932161, 8.292714, 8.653266, 9.013819, 9.374372, 9.734925, 10.095477, 10.45603, 10.816583, 11.177136, 11.537688, 11.898241, 12.258794, 12.619347, 12.979899, 13.340452, 13.701005, 14.061558, 14.422111, 14.782663, 15.143216, 15.503769, 15.864322, 16.224874, 16.585427, 16.94598, 17.306533, 17.667085, 18.027638, 18.388191, 18.748744, 19.109296, 19.469849, 19.830402, 20.190955, 20.551508, 20.91206, 21.272613, 21.633166, 21.993719, 22.354271, 22.714824, 23.075377, 23.43593, 23.796482, 24.157035, 24.517588, 24.878141, 25.238693, 25.599246, 25.959799, 26.320352, 26.680905, 27.041457, 27.40201, 27.762563, 28.123116, 28.483668, 28.844221, 29.204774, 29.565327, 29.925879, 30.286432, 30.646985, 31.007538, 31.36809, 31.728643, 32.089196, 32.449749, 32.810302, 33.170854, 33.531407, 33.89196, 34.252513, 34.613065, 34.973618, 35.334171, 35.694724, 36.055276, 36.415829, 36.776382, 37.136935, 37.497487, 37.85804, 38.218593, 38.579146, 38.939698, 39.300251, 39.660804, 40.021357, 40.38191, 40.742462, 41.103015, 41.463568, 41.824121, 42.184673, 42.545226, 42.905779, 43.266332, 43.626884, 43.987437, 44.34799, 44.708543, 45.069095, 45.429648, 45.790201, 46.150754, 46.511307, 46.871859, 47.232412, 47.592965, 47.953518, 48.31407, 48.674623, 49.035176, 49.395729, 49.756281, 50.116834, 50.477387, 50.83794, 51.198492, 51.559045, 51.919598, 52.280151, 52.640704, 53.001256, 53.361809, 53.722362, 54.082915, 54.443467, 54.80402, 55.164573, 55.525126, 55.885678, 56.246231, 56.606784, 56.967337, 57.327889, 57.688442, 58.048995, 58.409548, 58.770101, 59.130653, 59.491206, 59.851759, 60.212312, 60.572864, 60.933417, 61.29397, 61.654523, 62.015075, 62.375628, 62.736181, 63.096734, 63.457286, 63.817839, 64.178392, 64.538945, 64.899497, 65.26005, 65.620603, 65.981156, 66.341709, 66.702261, 67.062814, 67.423367, 67.78392, 68.144472, 68.505025, 68.865578, 69.226131, 69.586683, 69.947236, 70.307789, 70.668342, 71.028894, 71.389447, 71.75];
+        const hDense = [14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.377539, 14.37754, 14.37754, 14.37754, 14.377541, 14.377542, 14.377543, 14.377545, 14.377547, 14.377549, 14.377553, 14.377559, 14.377566, 14.377575, 14.377589, 14.377607, 14.377631, 14.377665, 14.37771, 14.377772, 14.377857, 14.377971, 14.378128, 14.378341, 14.37863, 14.379025, 14.379561, 14.380292, 14.381286, 14.382639, 14.384479, 14.386983, 14.390388, 14.395016, 14.401304, 14.409841, 14.421421, 14.437107, 14.458317, 14.486927, 14.525394, 14.576891, 14.645427, 14.735937, 14.854248, 15.006848, 15.200317, 15.440324, 15.730154, 16.068989, 16.450421, 16.861962, 17.286146, 17.703247, 18.094818, 18.446758, 18.750908, 19.004974, 19.211246, 19.374878, 19.502314, 19.600144, 19.674419, 19.73034, 19.772175, 19.803324, 19.826436, 19.843538, 19.85617, 19.865486, 19.872349, 19.877402, 19.881119, 19.883853, 19.885863, 19.88734, 19.888426, 19.889224, 19.88981, 19.89024, 19.890557, 19.890789, 19.89096, 19.891085, 19.891178, 19.891245, 19.891295, 19.891331, 19.891358, 19.891378, 19.891392, 19.891403, 19.891411, 19.891417, 19.891421, 19.891424, 19.891426, 19.891428, 19.891429, 19.89143, 19.891431, 19.891431, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891432, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433, 19.891433];
+
+        // Common Chart Options
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { font: { size: 11, weight: '600' } } }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Elapsed Time (hours)', font: { size: 11, weight: '600' } },
+                    grid: { color: '#f1f5f9' }
+                },
+                y: {
+                    grid: { color: '#f1f5f9' }
+                }
+            }
+        };
+
+        // Initialize Rainbow Charts
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1st Derivative Chart (Spectral Red/Orange)
+            const ctx1 = document.getElementById('chart1stDeriv').getContext('2d');
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: tData,
+                    datasets: [{
+                        label: 'dh/dt (m/hr) Velocity',
+                        data: dhData,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#dc2626'
+                    }]
+                },
+                options: commonOptions
+            });
+
+            // 2nd Derivative Chart (Spectral Orange/Yellow)
+            const ctx2 = document.getElementById('chart2ndDeriv').getContext('2d');
+            new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: tData,
+                    datasets: [{
+                        label: 'd²h/dt² (m/hr²) Acceleration',
+                        data: d2hData,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#d97706'
+                    }]
+                },
+                options: commonOptions
+            });
+
+            // Logistic Model Fit Chart (Violet Points & Cyan Line)
+            const ctx3 = document.getElementById('chartLogisticFit').getContext('2d');
+            new Chart(ctx3, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Measured Stage Points',
+                            data: tData.map((t, i) => ({ x: t, y: hData[i] })),
+                            backgroundColor: '#8b5cf6',
+                            borderColor: '#7c3aed',
+                            pointRadius: 4.5
+                        },
+                        {
+                            type: 'line',
+                            label: 'Logistic Fit Line',
+                            data: tDense.map((t, i) => ({ x: t, y: hDense[i] })),
+                            borderColor: '#06b6d4',
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        x: { title: { display: true, text: 'Elapsed Time (hours)' } },
+                        y: { title: { display: true, text: 'Stage Height h (meters)' } }
+                    }
+                }
+            });
+        });
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,5 +1,12 @@
-print("Python is Working")
+PS C:\Users\AngelV\Downloads\3rd Year\NUMSOL> python -u "c:\Users\AngelV\Downloads\3rd Year\NUMSOL\Submission\lab00_check_villondo.py"
+Python     : 3.14.7
+NumPy      : 2.5.2
+SciPy      : 1.18.0
+Matplotlib : 3.11.1
 
-PS C:\Users\AngelV\Downloads\NUMSOL\Python-Practice> python -u "c:\Users\AngelV\Downloads\NUMSOL\Python-Practice\Hello.py"
-Python is Working
-PS C:\Users\AngelV\Downloads\NUMSOL\Python-Practice> 
+mean of sin(x) over one period : 0.0
+integral of sin(x) from 0 to pi : 2.0 (exact value 2)
+
+figure written to figures/lab00_check.png
+PLATFORM READY.
+PS C:\Users\AngelV\Downloads\3rd Year\NUMSOL> 

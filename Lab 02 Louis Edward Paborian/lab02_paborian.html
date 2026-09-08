@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservoir Stage Numerical Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.1.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #06b6d4;      /* Cyan */
+            --primary-glow: rgba(6, 182, 212, 0.15);
+            --accent-emerald: #10b981;/* Emerald */
+            --accent-coral: #f43f5e;  /* Coral */
+            --accent-amber: #f59e0b;  /* Amber */
+            --accent-purple: #a855f7; /* Purple */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 32px 24px; max-width: 1440px; margin: 0 auto; }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 28px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            margin-bottom: 28px;
+        }
+
+        .dashboard-header h1 { font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin-bottom: 4px; }
+        .dashboard-header p { font-size: 14px; color: var(--text-muted); margin-bottom: 18px; }
+
+        .nav-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            background: #1e293b;
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            width: fit-content;
+        }
+        .tab-btn {
+            padding: 10px 22px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 8px;
+            transition: all 0.25s ease;
+        }
+        .tab-btn.active { background: var(--primary); color: #0f172a; font-weight: 700; box-shadow: 0 2px 10px var(--primary-glow); }
+        .tab-btn:hover:not(.active) { color: #ffffff; background: rgba(255, 255, 255, 0.05); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            margin-bottom: 24px;
+        }
+
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 24px; }
+        .stat-box {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-box::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0; width: 4px;
+            background: var(--primary);
+        }
+        .stat-box.emerald::before { background: var(--accent-emerald); }
+        .stat-box.coral::before { background: var(--accent-coral); }
+        .stat-box.amber::before { background: var(--accent-amber); }
+
+        .stat-box span { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+        .stat-box h3 { font-size: 24px; font-weight: 800; color: #ffffff; margin-top: 6px; letter-spacing: -0.5px; }
+
+        .formula-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #334155;
+            padding: 16px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+        }
+        .formula-card code { background: #0f172a; padding: 3px 8px; border-radius: 6px; color: var(--primary); font-family: monospace; font-size: 12px; border: 1px solid #334155; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+        th { background: #0f172a; font-weight: 700; color: var(--text-muted); text-align: left; padding: 14px; border-bottom: 1px solid var(--card-border); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 14px; border-bottom: 1px solid var(--card-border); color: #e2e8f0; }
+        tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-header">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div>
+            <h1>Reservoir Stage Analysis Dashboard</h1>
+            <p>15-Minute Logger Series • Time Horizon: 24.0 Hours (96 Data Points)</p>
+        </div>
+        <span class="badge">Standalone Analysis</span>
+    </div>
+    <div id="plot-header" style="height: 230px;"></div>
+</div>
+
+<div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab(0)">Tab 1: Finite Differences</button>
+    <button class="tab-btn" onclick="switchTab(1)">Tab 2: Logistic Model Fit</button>
+    <button class="tab-btn" onclick="switchTab(2)">Tab 3: Residuals & Integration</button>
+</div>
+
+<!-- TAB 1 -->
+<div class="tab-content active" id="tab-0">
+    <div class="grid-stats">
+        <div class="stat-box amber">
+            <span>Peak Filling Rate (dh/dt)</span>
+            <h3>0.448 m/h</h3>
+        </div>
+        <div class="stat-box emerald">
+            <span>Time of Peak Inflow</span>
+            <h3>t = 10.5 hrs</h3>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">1st Derivative Numerical Schemes</div>
+        <div class="formula-card">
+            <b>Numerical Formulations:</b><br>
+            • Forward Scheme: <code>dh/dt ≈ (h[i+1] - h[i]) / Δt</code><br>
+            • Central Scheme: <code>dh/dt ≈ (h[i+1] - h[i-1]) / (2Δt)</code><br>
+            • Backward Scheme: <code>dh/dt ≈ (h[i] - h[i-1]) / Δt</code>
+        </div>
+        <div id="plot-tab1-1st" style="height: 380px;"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">2nd Derivative (Flow Acceleration d²h/dt²)</div>
+        <div id="plot-tab1-2nd" style="height: 320px;"></div>
+    </div>
+</div>
+
+<!-- TAB 2 -->
+<div class="tab-content" id="tab-1">
+    <div class="card">
+        <div class="card-title">4-Parameter Logistic Curve Fitting</div>
+        <div class="formula-card">
+            <b>Model Equation:</b> <code>h(t) = c + a / (1 + exp(-k * (t - t0)))</code>
+        </div>
+        <div id="plot-tab2" style="height: 420px;"></div>
+    </div>
+</div>
+
+<!-- TAB 3 -->
+<div class="tab-content" id="tab-2">
+    <div class="grid-stats">
+        <div class="stat-box">
+            <span>R² Goodness of Fit</span>
+            <h3>0.999141</h3>
+        </div>
+        <div class="stat-box">
+            <span>Standard Error (s)</span>
+            <h3>0.048068 m</h3>
+        </div>
+        <div class="stat-box emerald">
+            <span>Quad Area ∫ h(t) dt</span>
+            <h3>67.1744 m·h</h3>
+        </div>
+        <div class="stat-box coral">
+            <span>Trapezoid Area</span>
+            <h3>67.1842 m·h</h3>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Model Residuals Analysis</div>
+        <div id="plot-residuals" style="height: 300px;"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Fitted Parameter Statistics</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Estimate</th>
+                    <th>Std Error</th>
+                    <th>t-Statistic</th>
+                    <th>p-Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><b>c (Baseline Stage)</b></td><td>0.4848</td><td>0.0145</td><td>33.338</td><td>< 0.0001</td></tr><tr><td><b>a (Max Rise Capacity)</b></td><td>4.0522</td><td>0.0198</td><td>205.0676</td><td>< 0.0001</td></tr><tr><td><b>k (Growth Constant)</b></td><td>0.4731</td><td>0.0065</td><td>72.4385</td><td>< 0.0001</td></tr><tr><td><b>t0 (Inflection Point)</b></td><td>9.9988</td><td>0.0316</td><td>316.1196</td><td>< 0.0001</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const data = {"t": [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0, 5.25, 5.5, 5.75, 6.0, 6.25, 6.5, 6.75, 7.0, 7.25, 7.5, 7.75, 8.0, 8.25, 8.5, 8.75, 9.0, 9.25, 9.5, 9.75, 10.0, 10.25, 10.5, 10.75, 11.0, 11.25, 11.5, 11.75, 12.0, 12.25, 12.5, 12.75, 13.0, 13.25, 13.5, 13.75, 14.0, 14.25, 14.5, 14.75, 15.0, 15.25, 15.5, 15.75, 16.0, 16.25, 16.5, 16.75, 17.0, 17.25, 17.5, 17.75, 18.0, 18.25, 18.5, 18.75, 19.0, 19.25, 19.5, 19.75, 20.0, 20.25, 20.5, 20.75, 21.0, 21.25, 21.5, 21.75, 22.0, 22.25, 22.5, 22.75, 23.0, 23.25, 23.5, 23.75], "h": [0.5, 0.502, 0.505, 0.509, 0.514, 0.52, 0.528, 0.537, 0.548, 0.56, 0.575, 0.591, 0.61, 0.631, 0.655, 0.681, 0.71, 0.742, 0.777, 0.815, 0.857, 0.902, 0.951, 1.004, 1.06, 1.121, 1.185, 1.253, 1.326, 1.402, 1.482, 1.566, 1.654, 1.745, 1.84, 1.938, 2.039, 2.143, 2.249, 2.357, 2.467, 2.578, 2.69, 2.802, 2.914, 3.025, 3.135, 3.243, 3.349, 3.452, 3.552, 3.648, 3.74, 3.827, 3.909, 3.986, 4.057, 4.122, 4.181, 4.234, 4.281, 4.322, 4.357, 4.386, 4.41, 4.428, 4.442, 4.452, 4.459, 4.463, 4.465, 4.466, 4.467, 4.468, 4.468, 4.469, 4.469, 4.47, 4.47, 4.47, 4.471, 4.471, 4.471, 4.471, 4.471, 4.471, 4.472, 4.472, 4.472, 4.472, 4.472, 4.472, 4.472, 4.472, 4.472, 4.472], "dh_dt": [0.008, 0.01, 0.014, 0.018, 0.022, 0.028, 0.034, 0.04, 0.046, 0.054, 0.062, 0.07, 0.08, 0.09, 0.1, 0.11, 0.122, 0.134, 0.146, 0.16, 0.174, 0.188, 0.204, 0.218, 0.234, 0.25, 0.264, 0.282, 0.298, 0.312, 0.328, 0.344, 0.358, 0.372, 0.386, 0.398, 0.41, 0.42, 0.428, 0.436, 0.442, 0.446, 0.448, 0.448, 0.446, 0.442, 0.436, 0.428, 0.418, 0.406, 0.392, 0.376, 0.358, 0.338, 0.318, 0.296, 0.272, 0.248, 0.224, 0.2, 0.176, 0.152, 0.128, 0.106, 0.084, 0.064, 0.048, 0.034, 0.022, 0.012, 0.006, 0.004, 0.004, 0.002, 0.002, 0.002, 0.002, 0.002, 0.0, 0.002, 0.002, 0.0, 0.0, 0.0, 0.0, 0.002, 0.002, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "dh_forward": [0.008, 0.012, 0.016, 0.02, 0.024, 0.032, 0.036, 0.044, 0.048, 0.06, 0.064, 0.076, 0.084, 0.096, 0.104, 0.116, 0.128, 0.14, 0.152, 0.168, 0.18, 0.196, 0.212, 0.224, 0.244, 0.256, 0.272, 0.292, 0.304, 0.32, 0.336, 0.352, 0.364, 0.38, 0.392, 0.404, 0.416, 0.424, 0.432, 0.44, 0.444, 0.448, 0.448, 0.448, 0.444, 0.44, 0.432, 0.424, 0.412, 0.4, 0.384, 0.368, 0.348, 0.328, 0.308, 0.284, 0.26, 0.236, 0.212, 0.188, 0.164, 0.14, 0.116, 0.096, 0.072, 0.056, 0.04, 0.028, 0.016, 0.008, 0.004, 0.004, 0.004, 0.0, 0.004, 0.0, 0.004, 0.0, 0.0, 0.004, 0.0, 0.0, 0.0, 0.0, 0.0, 0.004, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, null], "dh_central": [null, 0.01, 0.014, 0.018, 0.022, 0.028, 0.034, 0.04, 0.046, 0.054, 0.062, 0.07, 0.08, 0.09, 0.1, 0.11, 0.122, 0.134, 0.146, 0.16, 0.174, 0.188, 0.204, 0.218, 0.234, 0.25, 0.264, 0.282, 0.298, 0.312, 0.328, 0.344, 0.358, 0.372, 0.386, 0.398, 0.41, 0.42, 0.428, 0.436, 0.442, 0.446, 0.448, 0.448, 0.446, 0.442, 0.436, 0.428, 0.418, 0.406, 0.392, 0.376, 0.358, 0.338, 0.318, 0.296, 0.272, 0.248, 0.224, 0.2, 0.176, 0.152, 0.128, 0.106, 0.084, 0.064, 0.048, 0.034, 0.022, 0.012, 0.006, 0.004, 0.004, 0.002, 0.002, 0.002, 0.002, 0.002, 0.0, 0.002, 0.002, 0.0, 0.0, 0.0, 0.0, 0.002, 0.002, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, null], "dh_backward": [null, 0.008, 0.012, 0.016, 0.02, 0.024, 0.032, 0.036, 0.044, 0.048, 0.06, 0.064, 0.076, 0.084, 0.096, 0.104, 0.116, 0.128, 0.14, 0.152, 0.168, 0.18, 0.196, 0.212, 0.224, 0.244, 0.256, 0.272, 0.292, 0.304, 0.32, 0.336, 0.352, 0.364, 0.38, 0.392, 0.404, 0.416, 0.424, 0.432, 0.44, 0.444, 0.448, 0.448, 0.448, 0.444, 0.44, 0.432, 0.424, 0.412, 0.4, 0.384, 0.368, 0.348, 0.328, 0.308, 0.284, 0.26, 0.236, 0.212, 0.188, 0.164, 0.14, 0.116, 0.096, 0.072, 0.056, 0.04, 0.028, 0.016, 0.008, 0.004, 0.004, 0.004, 0.0, 0.004, 0.0, 0.004, 0.0, 0.0, 0.004, 0.0, 0.0, 0.0, 0.0, 0.0, 0.004, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "d2h_dt2": [0.016, 0.016, 0.016, 0.016, 0.016, 0.032, 0.016, 0.032, 0.016, 0.048, 0.016, 0.048, 0.032, 0.048, 0.032, 0.048, 0.048, 0.048, 0.048, 0.064, 0.048, 0.064, 0.064, 0.048, 0.08, 0.048, 0.064, 0.08, 0.048, 0.064, 0.064, 0.064, 0.048, 0.064, 0.048, 0.048, 0.048, 0.032, 0.032, 0.032, 0.016, 0.016, 0.0, 0.0, -0.016, -0.016, -0.032, -0.032, -0.048, -0.048, -0.064, -0.064, -0.08, -0.08, -0.08, -0.096, -0.096, -0.096, -0.096, -0.096, -0.096, -0.096, -0.096, -0.08, -0.096, -0.064, -0.064, -0.048, -0.048, -0.032, -0.016, -0.0, 0.0, -0.016, 0.016, -0.016, 0.016, -0.016, 0.0, 0.016, -0.016, 0.0, 0.0, 0.0, 0.0, 0.016, -0.016, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "d2h_central": [null, 0.016, 0.016, 0.016, 0.016, 0.032, 0.016, 0.032, 0.016, 0.048, 0.016, 0.048, 0.032, 0.048, 0.032, 0.048, 0.048, 0.048, 0.048, 0.064, 0.048, 0.064, 0.064, 0.048, 0.08, 0.048, 0.064, 0.08, 0.048, 0.064, 0.064, 0.064, 0.048, 0.064, 0.048, 0.048, 0.048, 0.032, 0.032, 0.032, 0.016, 0.016, 0.0, 0.0, -0.016, -0.016, -0.032, -0.032, -0.048, -0.048, -0.064, -0.064, -0.08, -0.08, -0.08, -0.096, -0.096, -0.096, -0.096, -0.096, -0.096, -0.096, -0.096, -0.08, -0.096, -0.064, -0.064, -0.048, -0.048, -0.032, -0.016, -0.0, 0.0, -0.016, 0.016, -0.016, 0.016, -0.016, 0.0, 0.016, -0.016, 0.0, 0.0, 0.0, 0.0, 0.016, -0.016, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, null], "h_fit": [0.5202, 0.5246, 0.5296, 0.5351, 0.5414, 0.5484, 0.5562, 0.565, 0.5748, 0.5859, 0.5982, 0.612, 0.6274, 0.6446, 0.6637, 0.6851, 0.7089, 0.7353, 0.7645, 0.797, 0.8328, 0.8723, 0.9158, 0.9635, 1.0157, 1.0727, 1.1347, 1.2019, 1.2744, 1.3523, 1.4356, 1.5244, 1.6184, 1.7174, 1.8212, 1.9292, 2.0409, 2.1557, 2.2729, 2.3918, 2.5115, 2.6312, 2.75, 2.8672, 2.982, 3.0937, 3.2016, 3.3053, 3.4043, 3.4983, 3.587, 3.6703, 3.7482, 3.8206, 3.8877, 3.9497, 4.0066, 4.0588, 4.1065, 4.1499, 4.1894, 4.2252, 4.2576, 4.2868, 4.3132, 4.3369, 4.3583, 4.3774, 4.3946, 4.41, 4.4238, 4.4361, 4.4471, 4.4569, 4.4657, 4.4735, 4.4805, 4.4867, 4.4923, 4.4972, 4.5016, 4.5056, 4.509, 4.5121, 4.5149, 4.5174, 4.5195, 4.5215, 4.5232, 4.5248, 4.5261, 4.5273, 4.5284, 4.5294, 4.5302, 4.531], "residuals": [-0.02023, -0.02264, -0.02458, -0.02614, -0.02737, -0.02836, -0.0282, -0.02798, -0.02683, -0.02585, -0.02318, -0.02097, -0.01738, -0.01357, -0.00875, -0.00411, 0.00113, 0.00674, 0.01246, 0.01804, 0.02422, 0.0297, 0.03522, 0.0405, 0.04427, 0.04828, 0.0503, 0.05113, 0.05164, 0.04973, 0.04636, 0.04161, 0.03559, 0.02755, 0.01882, 0.00883, -0.00188, -0.0127, -0.02392, -0.03478, -0.04447, -0.05315, -0.06, -0.0652, -0.068, -0.06868, -0.06663, -0.06232, -0.05531, -0.04628, -0.03499, -0.0223, -0.00817, 0.00639, 0.02128, 0.03634, 0.0504, 0.06321, 0.07453, 0.08409, 0.09161, 0.09681, 0.09942, 0.09917, 0.0968, 0.09107, 0.08373, 0.07458, 0.0644, 0.05301, 0.04123, 0.02991, 0.0199, 0.01107, 0.00229, -0.00454, -0.01152, -0.01675, -0.0223, -0.02724, -0.03064, -0.03455, -0.03804, -0.04114, -0.0439, -0.04636, -0.04754, -0.04949, -0.05122, -0.05275, -0.05412, -0.05533, -0.05641, -0.05737, -0.05822, -0.05898], "max_dh_time": 10.5, "max_dh_val": 0.448, "sse": 0.212572, "sst": 247.333747, "r2": 0.999141, "s_est": 0.048068, "dof": 92, "params": [{"param": "c (Baseline Stage)", "value": 0.4848, "se": 0.0145, "t": 33.338, "p": "< 0.0001"}, {"param": "a (Max Rise Capacity)", "value": 4.0522, "se": 0.0198, "t": 205.0676, "p": "< 0.0001"}, {"param": "k (Growth Constant)", "value": 0.4731, "se": 0.0065, "t": 72.4385, "p": "< 0.0001"}, {"param": "t0 (Inflection Point)", "value": 9.9988, "se": 0.0316, "t": 316.1196, "p": "< 0.0001"}], "area_quad": 67.1744, "quad_err": 0.0, "area_trapz": 67.1842};
+
+const themeDark = {
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    font: { color: '#94a3b8', family: 'Plus Jakarta Sans, sans-serif' },
+    xaxis: { gridcolor: '#334155', linecolor: '#334155', zerolinecolor: '#334155' },
+    yaxis: { gridcolor: '#334155', linecolor: '#334155', zerolinecolor: '#334155' },
+    margin: { t: 20, b: 40, l: 50, r: 20 }
+};
+
+// Header Plot
+Plotly.newPlot('plot-header', [{
+    x: data.t, y: data.h, mode: 'lines+markers', name: 'Stage (m)',
+    line: {color: '#06b6d4', width: 2.5}, marker: {size: 4}
+}], { ...themeDark, yaxis: { ...themeDark.yaxis, title: 'Stage (m)' }, xaxis: { ...themeDark.xaxis, title: 'Time (h)' } });
+
+// Tab 1: 1st Derivative Schemes
+Plotly.newPlot('plot-tab1-1st', [
+    { x: data.t, y: data.dh_dt, name: 'Combined Composite', line: {color: '#f8fafc', width: 2.5} },
+    { x: data.t, y: data.dh_central, name: 'Central Diff', mode: 'lines', line: {color: '#f59e0b', dash: 'dash'} },
+    { x: data.t, y: data.dh_forward, name: 'Forward Diff', mode: 'markers', marker: {color: '#10b981', size: 5} },
+    { x: data.t, y: data.dh_backward, name: 'Backward Diff', mode: 'markers', marker: {color: '#f43f5e', size: 5} }
+], { ...themeDark, yaxis: { ...themeDark.yaxis, title: 'dh/dt (m/h)' }, xaxis: { ...themeDark.xaxis, title: 'Time (h)' } });
+
+// Tab 1: 2nd Derivative
+Plotly.newPlot('plot-tab1-2nd', [
+    { x: data.t, y: data.d2h_dt2, name: 'd²h/dt²', line: {color: '#a855f7', width: 2.5} }
+], { ...themeDark, yaxis: { ...themeDark.yaxis, title: 'd²h/dt² (m/h²)' }, xaxis: { ...themeDark.xaxis, title: 'Time (h)' } });
+
+// Tab 2: Logistic Fit
+Plotly.newPlot('plot-tab2', [
+    { x: data.t, y: data.h, mode: 'markers', name: 'Observed Data', marker: {color: '#64748b', size: 6} },
+    { x: data.t, y: data.h_fit, mode: 'lines', name: 'Logistic Fit', line: {color: '#06b6d4', width: 2.5} }
+], { ...themeDark, yaxis: { ...themeDark.yaxis, title: 'Stage (m)' }, xaxis: { ...themeDark.xaxis, title: 'Time (h)' } });
+
+// Tab 3: Residuals
+Plotly.newPlot('plot-residuals', [
+    { x: data.t, y: data.residuals, mode: 'lines+markers', name: 'Residuals', marker: {color: '#f43f5e', size: 5}, line: {width: 1} },
+    { x: [data.t[0], data.t[data.t.length-1]], y: [0, 0], mode: 'lines', name: 'Zero Line', line: {dash: 'dash', color: '#f8fafc'} }
+], { ...themeDark, yaxis: { ...themeDark.yaxis, title: 'Residual (m)' }, xaxis: { ...themeDark.xaxis, title: 'Time (h)' } });
+
+function switchTab(index) {
+    const btns = document.querySelectorAll('.tab-btn');
+    const tabs = document.querySelectorAll('.tab-content');
+    btns.forEach((b, i) => b.classList.toggle('active', i === index));
+    tabs.forEach((t, i) => t.classList.toggle('active', i === index));
+}
+</script>
+</body>
+</html>

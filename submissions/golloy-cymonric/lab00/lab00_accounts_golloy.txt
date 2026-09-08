@@ -1,0 +1,3 @@
+cymon-golloy
+ChatGPT, Github Copilot
+https://github.com/cymon-golloy/numerical-methods-lab.git

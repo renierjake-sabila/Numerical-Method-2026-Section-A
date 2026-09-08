@@ -1,0 +1,5 @@
+GitHub username : rovickarro123-oss
+
+The AI assistant(s) registered :  ChatGPT, and Gemini
+
+The link to GitHub repository : https://github.com/rovickarro123-oss/numerical-methods-lab
