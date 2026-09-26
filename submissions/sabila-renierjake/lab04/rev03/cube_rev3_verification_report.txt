@@ -1,0 +1,272 @@
+==============================================================================
+CUBE SOLVER REV 3 -- LOAD FRAMEWORK VERIFICATION REPORT
+==============================================================================
+
+1. SCOPE & BOUNDARY
+------------------------------------------------------------------------------
+Rev 3 adds a load-case, diaphragm-DEFINITION, and NSCP load-combination
+framework on top of the existing baseline Frame3DSolver. Per project scope:
+  - Rev 3 does NOT compute reactions, member forces, or nodal displacements
+    for LC1-LC9 or any of the 30 combinations below.
+  - Frame3DSolver.solve() (baseline) is untouched and is never called from
+    this load-case/combination/viewer layer.
+  - The roof diaphragm is DEFINED with documented constraint equations but
+    is NOT eliminated into a stiffness/DOF equation system.
+  - All 'equilibrium'/'consistency' checks below verify that the applied-
+    load arithmetic is internally correct (sum of loads == intended total;
+    combination total == independently re-derived total). They are NOT a
+    structural equilibrium check against support reactions.
+
+2. MODEL SUMMARY
+------------------------------------------------------------------------------
+  Nodes: 8   Members: 12
+  Material weight density (gamma): 76.9700 kN/m3 (MaterialConfig.density_kNm3, workbook weight-density column)
+  Roof-elevation nodes: [5, 6, 7, 8]   Roof beams: [5, 6, 7, 8]
+
+3. LOAD CASE RESULTS (LC1-LC9)
+------------------------------------------------------------------------------
+  LC1  DEAD / SELF WEIGHT         Fx=   0.0000  Fy= -27.3516  Fz=   0.0000  |F|=  27.3516 kN  nodes= 0  members=12
+  LC2  ROOF DEAD                  Fx=   0.0000  Fy=-120.0000  Fz=   0.0000  |F|= 120.0000 kN  nodes= 0  members= 4
+       intended=120.0000 kN  equilibrium_error=0.000000 kN
+  LC3  ROOF LIVE                  Fx=   0.0000  Fy= -72.0000  Fz=   0.0000  |F|=  72.0000 kN  nodes= 0  members= 4
+       intended=72.0000 kN  equilibrium_error=0.000000 kN
+  LC4  ROOF BEAM CENTER LOAD      Fx=   0.0000  Fy= -20.0000  Fz=   0.0000  |F|=  20.0000 kN  nodes= 0  members= 4
+       intended=20.0000 kN  equilibrium_error=0.000000 kN
+  LC5  WIND X                     Fx=  10.0000  Fy=   0.0000  Fz=   0.0000  |F|=  10.0000 kN  nodes= 4  members= 0
+       intended=10.0000 kN  equilibrium_error=0.000000 kN
+  LC6  WIND Z                     Fx=   0.0000  Fy=   0.0000  Fz=  10.0000  |F|=  10.0000 kN  nodes= 4  members= 0
+       intended=10.0000 kN  equilibrium_error=0.000000 kN
+  LC7  SEISMIC X                  Fx=  15.0000  Fy=   0.0000  Fz=   0.0000  |F|=  15.0000 kN  nodes= 4  members= 0
+       intended=15.0000 kN  equilibrium_error=0.000000 kN
+  LC8  SEISMIC Z                  Fx=   0.0000  Fy=   0.0000  Fz=  15.0000  |F|=  15.0000 kN  nodes= 4  members= 0
+       intended=15.0000 kN  equilibrium_error=0.000000 kN
+  LC9  TEMPERATURE +15C           Fx=   0.0000  Fy=   0.0000  Fz=   0.0000  |F|=   0.0000 kN  nodes= 0  members=12
+       intended=0.0000 kN  equilibrium_error=0.000000 kN
+
+  NOTE -- self-weight cross-check (documentation only, not this run's config):
+    This run uses a single section (W12X26 / W310X38.7) for all 12 members,
+    giving 0.3799 kN/m per member and 27.3516 kN total, as
+    reported above. A mixed-section variant (beams W310X38.7 @ 0.3802 kN/m,
+    columns W250X49.1 @ 0.4818 kN/m) is documented for reference ONLY -- it is
+    NOT the configuration used in this run: total self-weight would be
+    29.815 kN (cross-checked against shape mass x g = 29.773 kN, 0.14% apart
+    due to published unit-weight rounding). Do not read 29.815 kN as this
+    run's LC1 result.
+
+3B. TEMPERATURE LOAD VERIFICATION (LC9 DETAIL)
+------------------------------------------------------------------------------
+  Thermal DEFORMATION (strain, free expansion) is reported separately from
+  thermal FORCE (restrained-member axial force) for every member below.
+  Restraint state is classified from model.supports alone (no stiffness
+  solve, per Rev 3 scope); 'partially_restrained' members are reported as
+  INDETERMINATE, with the fixed-end benchmark shown for reference only.
+
+  Member 1   Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=fully_restrained      fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> 173.190 kN compression (both ends axially restrained)
+  Member 2   Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=fully_restrained      fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> 173.190 kN compression (both ends axially restrained)
+  Member 3   Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=fully_restrained      fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> 173.190 kN compression (both ends axially restrained)
+  Member 4   Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=fully_restrained      fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> 173.190 kN compression (both ends axially restrained)
+  Member 5   Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=free                  fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> 0.000 kN (unrestrained -- free to expand)
+  Member 6   Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=free                  fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> 0.000 kN (unrestrained -- free to expand)
+  Member 7   Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=free                  fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> 0.000 kN (unrestrained -- free to expand)
+  Member 8   Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=free                  fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> 0.000 kN (unrestrained -- free to expand)
+  Member 9   Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=partially_restrained  fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> indeterminate -- requires an active stiffness solve (out of Rev 3 scope); analytical fixed-end benchmark EA*alpha*dT = 173.190 kN reported for reference only
+  Member 10  Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=partially_restrained  fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> indeterminate -- requires an active stiffness solve (out of Rev 3 scope); analytical fixed-end benchmark EA*alpha*dT = 173.190 kN reported for reference only
+  Member 11  Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=partially_restrained  fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> indeterminate -- requires an active stiffness solve (out of Rev 3 scope); analytical fixed-end benchmark EA*alpha*dT = 173.190 kN reported for reference only
+  Member 12  Tref=20.0C  dT=+15.0C  material=ASTM A36 Steel  alpha=1.1700e-05 /C
+    eps_T=1.7550e-04   L=6.000 m   free_expansion dL=1.0530 mm   EA=986838.2 kN
+    restraint_state=partially_restrained  fixed-end benchmark N=EA*alpha*dT=173.190 kN
+    FE thermal load vector (self-equilibrating, kN): [-173.190, +173.190]
+    reported result -> indeterminate -- requires an active stiffness solve (out of Rev 3 scope); analytical fixed-end benchmark EA*alpha*dT = 173.190 kN reported for reference only
+
+  FE thermal load vector check: 12 of 12 member(s) have a NON-EMPTY (nonzero) vector, while the net force on the structure is 0.000000 kN (target: 0.000000 kN).
+
+  NOTE -- thermal-force cross-check (documentation only, not this run's config):
+    This run's single-section model (W12X26 / W310X38.7, A992/A36 properties
+    from the supplied workbooks) gives EA=986838.2 kN and a fully
+    restrained benchmark force N=EA*alpha*dT=173.190 kN, as reported
+    per member above. The mixed-section, nominal-A992 reference values quoted
+    for cross-check purposes are EA = 987,743.1 kN and N = 173.349 kN compression
+    (beams) -- documented for reference ONLY, not this run's configuration. The
+    ~0.1% gap between the two EA values traces to the same single-vs-mixed-
+    section cause noted for LC1 self-weight in Section 3, plus minor differences
+    between the nominal AISC area used here and the reference calculation's A992
+    property source. Do not read 987,743.1 kN / 173.349 kN as this run's result.
+
+4. RIGID ROOF DIAPHRAGM DEFINITION
+------------------------------------------------------------------------------
+  Diaphragm(id=1, name='ROOF DIAPHRAGM', master=N5, slaves=[6, 7, 8], coupled=('UX', 'UZ', 'RY'), free=('UY', 'RX', 'RZ'))
+  Constraint equations:
+    UX_node6 = UX_node5  (diaphragm 'ROOF DIAPHRAGM', master N5)
+    UZ_node6 = UZ_node5  (diaphragm 'ROOF DIAPHRAGM', master N5)
+    RY_node6 = RY_node5  (diaphragm 'ROOF DIAPHRAGM', master N5)
+    UX_node7 = UX_node5  (diaphragm 'ROOF DIAPHRAGM', master N5)
+    UZ_node7 = UZ_node5  (diaphragm 'ROOF DIAPHRAGM', master N5)
+    RY_node7 = RY_node5  (diaphragm 'ROOF DIAPHRAGM', master N5)
+    UX_node8 = UX_node5  (diaphragm 'ROOF DIAPHRAGM', master N5)
+    UZ_node8 = UZ_node5  (diaphragm 'ROOF DIAPHRAGM', master N5)
+    RY_node8 = RY_node5  (diaphragm 'ROOF DIAPHRAGM', master N5)
+
+5. NSCP LOAD COMBINATIONS (FULL LIST, 30)
+------------------------------------------------------------------------------
+  Basis: NSCP 2015, 7th Edition -- Section 203.3.1 (LRFD / Factored Load Combinations) and Section 203.4.1 (ASD / Allowable Stress Design Combinations), including 4 independent temperature (T) combinations per project scope.
+  D = LC1 (self-weight) + LC2 (roof dead) + LC4 (roof beam center load),
+  each scaled by the same factor.  L=LC3  Wx=LC5  Wz=LC6  Ex=LC7  Ez=LC8  T=LC9
+  #1  [LRFD] 1.4D                     factors={1: 1.4, 2: 1.4, 4: 1.4}
+  #2  [LRFD] 1.2D + 1.6L              factors={1: 1.2, 2: 1.2, 4: 1.2, 3: 1.6}
+  #3  [LRFD] 1.2D + 1.0L + 1.0Wx      factors={1: 1.2, 2: 1.2, 4: 1.2, 3: 1.0, 5: 1.0}
+  #4  [LRFD] 1.2D + 1.0L - 1.0Wx      factors={1: 1.2, 2: 1.2, 4: 1.2, 3: 1.0, 5: -1.0}
+  #5  [LRFD] 1.2D + 1.0L + 1.0Wz      factors={1: 1.2, 2: 1.2, 4: 1.2, 3: 1.0, 6: 1.0}
+  #6  [LRFD] 1.2D + 1.0L - 1.0Wz      factors={1: 1.2, 2: 1.2, 4: 1.2, 3: 1.0, 6: -1.0}
+  #7  [LRFD] 1.2D + 1.0L + 1.0Ex      factors={1: 1.2, 2: 1.2, 4: 1.2, 3: 1.0, 7: 1.0}
+  #8  [LRFD] 1.2D + 1.0L - 1.0Ex      factors={1: 1.2, 2: 1.2, 4: 1.2, 3: 1.0, 7: -1.0}
+  #9  [LRFD] 1.2D + 1.0L + 1.0Ez      factors={1: 1.2, 2: 1.2, 4: 1.2, 3: 1.0, 8: 1.0}
+  #10 [LRFD] 1.2D + 1.0L - 1.0Ez      factors={1: 1.2, 2: 1.2, 4: 1.2, 3: 1.0, 8: -1.0}
+  #11 [LRFD] 1.2D + 1.0L + 1.0T       factors={1: 1.2, 2: 1.2, 4: 1.2, 3: 1.0, 9: 1.0}
+  #12 [LRFD] 0.9D + 1.0T              factors={1: 0.9, 2: 0.9, 4: 0.9, 9: 1.0}
+  #13 [ ASD] D                        factors={1: 1.0, 2: 1.0, 4: 1.0}
+  #14 [ ASD] D + L                    factors={1: 1.0, 2: 1.0, 4: 1.0, 3: 1.0}
+  #15 [ ASD] D + 0.6Wx                factors={1: 1.0, 2: 1.0, 4: 1.0, 5: 0.6}
+  #16 [ ASD] D - 0.6Wx                factors={1: 1.0, 2: 1.0, 4: 1.0, 5: -0.6}
+  #17 [ ASD] D + 0.6Wz                factors={1: 1.0, 2: 1.0, 4: 1.0, 6: 0.6}
+  #18 [ ASD] D - 0.6Wz                factors={1: 1.0, 2: 1.0, 4: 1.0, 6: -0.6}
+  #19 [ ASD] D + 0.7Ex                factors={1: 1.0, 2: 1.0, 4: 1.0, 7: 0.7}
+  #20 [ ASD] D - 0.7Ex                factors={1: 1.0, 2: 1.0, 4: 1.0, 7: -0.7}
+  #21 [ ASD] D + 0.7Ez                factors={1: 1.0, 2: 1.0, 4: 1.0, 8: 0.7}
+  #22 [ ASD] D - 0.7Ez                factors={1: 1.0, 2: 1.0, 4: 1.0, 8: -0.7}
+  #23 [ ASD] 0.6D + 0.6Wx             factors={1: 0.6, 2: 0.6, 4: 0.6, 5: 0.6}
+  #24 [ ASD] 0.6D - 0.6Wx             factors={1: 0.6, 2: 0.6, 4: 0.6, 5: -0.6}
+  #25 [ ASD] 0.6D + 0.6Wz             factors={1: 0.6, 2: 0.6, 4: 0.6, 6: 0.6}
+  #26 [ ASD] 0.6D - 0.6Wz             factors={1: 0.6, 2: 0.6, 4: 0.6, 6: -0.6}
+  #27 [ ASD] 0.6D + 0.7Ex             factors={1: 0.6, 2: 0.6, 4: 0.6, 7: 0.7}
+  #28 [ ASD] 0.6D - 0.7Ex             factors={1: 0.6, 2: 0.6, 4: 0.6, 7: -0.7}
+  #29 [ ASD] D + T                    factors={1: 1.0, 2: 1.0, 4: 1.0, 9: 1.0}
+  #30 [ ASD] D + 0.75L + 0.75T        factors={1: 1.0, 2: 1.0, 4: 1.0, 3: 0.75, 9: 0.75}
+
+6. PER-COMBINATION CONSISTENCY CHECK (0.000000 kN target)
+------------------------------------------------------------------------------
+  #1  [LRFD] 1.4D                 Fx=   0.0000  Fy=-234.2923  Fz=   0.0000  consistency_err=0.000000 kN
+  #2  [LRFD] 1.2D + 1.6L          Fx=   0.0000  Fy=-316.0219  Fz=   0.0000  consistency_err=0.000000 kN
+  #3  [LRFD] 1.2D + 1.0L + 1.0Wx  Fx=  10.0000  Fy=-272.8219  Fz=   0.0000  consistency_err=0.000000 kN
+  #4  [LRFD] 1.2D + 1.0L - 1.0Wx  Fx= -10.0000  Fy=-272.8219  Fz=   0.0000  consistency_err=0.000000 kN
+  #5  [LRFD] 1.2D + 1.0L + 1.0Wz  Fx=   0.0000  Fy=-272.8219  Fz=  10.0000  consistency_err=0.000000 kN
+  #6  [LRFD] 1.2D + 1.0L - 1.0Wz  Fx=   0.0000  Fy=-272.8219  Fz= -10.0000  consistency_err=0.000000 kN
+  #7  [LRFD] 1.2D + 1.0L + 1.0Ex  Fx=  15.0000  Fy=-272.8219  Fz=   0.0000  consistency_err=0.000000 kN
+  #8  [LRFD] 1.2D + 1.0L - 1.0Ex  Fx= -15.0000  Fy=-272.8219  Fz=   0.0000  consistency_err=0.000000 kN
+  #9  [LRFD] 1.2D + 1.0L + 1.0Ez  Fx=   0.0000  Fy=-272.8219  Fz=  15.0000  consistency_err=0.000000 kN
+  #10 [LRFD] 1.2D + 1.0L - 1.0Ez  Fx=   0.0000  Fy=-272.8219  Fz= -15.0000  consistency_err=0.000000 kN
+  #11 [LRFD] 1.2D + 1.0L + 1.0T   Fx=   0.0000  Fy=-272.8219  Fz=   0.0000  consistency_err=0.000000 kN
+  #12 [LRFD] 0.9D + 1.0T          Fx=   0.0000  Fy=-150.6164  Fz=   0.0000  consistency_err=0.000000 kN
+  #13 [ ASD] D                    Fx=   0.0000  Fy=-167.3516  Fz=   0.0000  consistency_err=0.000000 kN
+  #14 [ ASD] D + L                Fx=   0.0000  Fy=-239.3516  Fz=   0.0000  consistency_err=0.000000 kN
+  #15 [ ASD] D + 0.6Wx            Fx=   6.0000  Fy=-167.3516  Fz=   0.0000  consistency_err=0.000000 kN
+  #16 [ ASD] D - 0.6Wx            Fx=  -6.0000  Fy=-167.3516  Fz=   0.0000  consistency_err=0.000000 kN
+  #17 [ ASD] D + 0.6Wz            Fx=   0.0000  Fy=-167.3516  Fz=   6.0000  consistency_err=0.000000 kN
+  #18 [ ASD] D - 0.6Wz            Fx=   0.0000  Fy=-167.3516  Fz=  -6.0000  consistency_err=0.000000 kN
+  #19 [ ASD] D + 0.7Ex            Fx=  10.5000  Fy=-167.3516  Fz=   0.0000  consistency_err=0.000000 kN
+  #20 [ ASD] D - 0.7Ex            Fx= -10.5000  Fy=-167.3516  Fz=   0.0000  consistency_err=0.000000 kN
+  #21 [ ASD] D + 0.7Ez            Fx=   0.0000  Fy=-167.3516  Fz=  10.5000  consistency_err=0.000000 kN
+  #22 [ ASD] D - 0.7Ez            Fx=   0.0000  Fy=-167.3516  Fz= -10.5000  consistency_err=0.000000 kN
+  #23 [ ASD] 0.6D + 0.6Wx         Fx=   6.0000  Fy=-100.4110  Fz=   0.0000  consistency_err=0.000000 kN
+  #24 [ ASD] 0.6D - 0.6Wx         Fx=  -6.0000  Fy=-100.4110  Fz=   0.0000  consistency_err=0.000000 kN
+  #25 [ ASD] 0.6D + 0.6Wz         Fx=   0.0000  Fy=-100.4110  Fz=   6.0000  consistency_err=0.000000 kN
+  #26 [ ASD] 0.6D - 0.6Wz         Fx=   0.0000  Fy=-100.4110  Fz=  -6.0000  consistency_err=0.000000 kN
+  #27 [ ASD] 0.6D + 0.7Ex         Fx=  10.5000  Fy=-100.4110  Fz=   0.0000  consistency_err=0.000000 kN
+  #28 [ ASD] 0.6D - 0.7Ex         Fx= -10.5000  Fy=-100.4110  Fz=   0.0000  consistency_err=0.000000 kN
+  #29 [ ASD] D + T                Fx=   0.0000  Fy=-167.3516  Fz=   0.0000  consistency_err=0.000000 kN
+  #30 [ ASD] D + 0.75L + 0.75T    Fx=   0.0000  Fy=-221.3516  Fz=   0.0000  consistency_err=0.000000 kN
+  Maximum consistency error across all 30 combinations: 0.000000 kN
+
+7. CODE BASIS
+------------------------------------------------------------------------------
+  NSCP 2015, 7th Edition -- Section 203.3.1 (LRFD / Factored Load Combinations) and Section 203.4.1 (ASD / Allowable Stress Design Combinations), including 4 independent temperature (T) combinations per project scope.
+
+8. AUTOMATED TEST SUMMARY
+------------------------------------------------------------------------------
+  132 tests run, 0 failure(s), 0 error(s) -- ALL PASSED
+
+9. ASSUMPTIONS & ITEMS REQUIRING MANUAL ENGINEERING VERIFICATION
+------------------------------------------------------------------------------
+  - ASD combinations 15-28 and all 4 temperature combinations (11, 12, 29, 30)
+    are this project's own extension of the 6 base LRFD forms to reach the
+    specified 30-combination count; they follow standard NSCP/ASCE-7-style
+    directional-reversal and overturning-check patterns but should be
+    reviewed against the governing code edition before use on a real project.
+
+  Appendix C provision check (temperature combinations, per handout):
+  Appendix C states the NSCP load-combination factors -- including the
+  temperature combinations -- were transcribed for NSCP 2015 but NOT
+  verified against the printed code, and must be checked against
+  NSCP 2015, Sec. 104.3.2 (Self-Straining Forces) and
+  NSCP 2015, Sec. 203.2 (Symbols and Notations) before design use.
+  That check has now been performed. The governing NSCP 2015 provisions
+  where T legitimately appears are:
+    Eq. 203-2: 1.2(D+F+T) + 1.6(L+H) + 0.5(Lr or R)  [Sec. 203.3.1, LRFD]
+    Eq. 203-9: D+H+F+L+T  [Sec. 203.4.1, ASD Basic]
+    Eq. 203-11: D+H+F+0.75[L+T+(Lr or R)]  [Sec. 203.4.1, ASD Basic]
+  This project's 30-combination table (kept unchanged, per project
+  confirmation against the rev3_combination_*.pdf reference renders)
+  represents T with 4 combinations rather than the code's 3:
+    Combo #11: 1.2D+1.0L+1.0T
+    Combo #12: 0.9D+1.0T
+    Combo #29: D+T
+    Combo #30: D+0.75L+0.75T
+  Project combos #11/#30 are reasonable engineering analogues of official Eq. 203-2/203-11 (same idea: T alongside L, scaled down together in the 0.75 case) but are not literal transcriptions -- #11 uses a separate 1.0 factor on T rather than bundling T into D's 1.2 per 203-2. Project combos #12 and #29 have no literal counterpart in the official 203-series list at all. This is flagged for engineering sign-off, not auto-corrected, since the existing numbering was fixed against the project's own reference PDFs in an earlier phase.
+  - Roof elevation / roof beams / roof nodes are detected generically as the
+    max-Y node set, not hardcoded IDs -- re-verify this still selects the
+    intended level if the model geometry changes.
+  - Consistency checks above verify load-vector arithmetic only; they are not
+    a substitute for a full structural analysis (reactions, member forces,
+    displacements), which remains out of Rev 3's scope.
+
+10. SIGN-OFF
+------------------------------------------------------------------------------
+  Rev 3 delivers: load-case data model, LC1-LC9, roof diaphragm DEFINITION,
+  30 NSCP load combinations, and the PySide6/Matplotlib load viewer.
+  Rev 3 does NOT deliver, and this report does NOT claim: solved reactions,
+  member forces, or nodal displacements for any of the above. Those remain
+  the unchanged, separate domain of Frame3DSolver.solve() (baseline).
+==============================================================================
